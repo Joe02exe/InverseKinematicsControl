@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(kinematic_control)
+project(inverse_kinematic_control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   message_generation
+  moveit_commander
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,13 +50,11 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  EulerOrientation.msg
-  EulerPose.msg
-  Jacobian.msg
-  TransformationMatrix.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -76,7 +75,7 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   geometry_msgs
-  kinematic_control
+  inverse_kinematic_control
 )
 
 ################################################
@@ -110,8 +109,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES kinematic_control
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+#  LIBRARIES inverse_kinematic_control_node
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime moveit_commander
 #  DEPENDS system_lib
 )
 
@@ -128,7 +127,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/kinematic_control.cpp
+#   src/${PROJECT_NAME}/inverse_kinematic_control_node.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -139,7 +138,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/kinematic_control_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/inverse_kinematic_control_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -166,7 +165,7 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/kinematic_control_node.py
+  scripts/inverse_kinematic_control_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -203,7 +202,7 @@ catkin_install_python(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_kinematic_control.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_inverse_kinematic_control.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
