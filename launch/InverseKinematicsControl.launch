@@ -1,6 +1,6 @@
 <?mxl version="1.0"?>
 <launch>
     <include file="$(find panda_moveit_config)/launch/demo.launch"/>
-    <node pkg="inverse_kinematic_control" name="coppelia" type="coppelia.py" args="$(find inverse_kinematic_control)/scene.ttt"/>
+    <node name="coppelia" pkg="inverse_kinematic_control" type="run_coppelia.sh" output="screen" args="$(find inverse_kinematic_control)/scene.ttt"/>
     <node name="Moveit_main_node" pkg="inverse_kinematic_control" type="inverse_kinematic_control_node.py" output="screen"/>
 </launch>
