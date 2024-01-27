@@ -92,14 +92,14 @@ class MoveGroup():
         target_pose.pose.orientation.z = orientation[2]
         target_pose.pose.orientation.w = orientation[3]
         self.move_group.set_pose_target(target_pose)
+        
         plan = self.move_group.go()
         if plan is False:
             return False
         return True
 
     def move_to_joint_values(self, joint_values) -> bool:
-        rospy.loginfo(
-            f"MoveGroup \"{self.group_name}\" received target. Trying to move to joint_values {joint_values} ...")
+        rospy.loginfo(f"MoveGroup \"{self.group_name}\" received target. Trying to move to joint_values {joint_values} ...")
         self.move_group.set_joint_value_target(joint_values)
         plan = self.move_group.go(wait=True)
         if plan is False:
@@ -119,8 +119,7 @@ class Moveit_main_node():
         self.panda_arm: MoveGroup = MoveGroup("panda_arm")
         self.panda_hand: MoveGroup = MoveGroup("panda_hand")
         self.tf_listener = tf.TransformListener()
-        self.touch_links = self.robot.get_link_names(
-            group=self.panda_hand.group_name)
+        self.touch_links = self.robot.get_link_names(group=self.panda_hand.group_name)
         # self.scene.attach_box(eef_link, box_name, touch_links=touch_links)
 
     def load_objects_from_tf(self):
@@ -350,10 +349,9 @@ class Moveit_main_node():
             if not self.move_arm_to_object(self.container_list[i], z_offset=0.2):
                 self.abort_pick_and_place(i)
                 continue
-            self.detach_object_from_gripper(self.object_list[i])
             self.open_fingers()
             
-            # Check if cube is in bowl else retry
+            # TODO Check if cube is in bowl else retry
             
             
 
