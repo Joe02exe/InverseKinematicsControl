@@ -29,20 +29,13 @@ class TfObject():
         self.dimensions: List[float] = dimensions
         
         if name.startswith("Obstacle"):
-            position[2] += 0.08
+            position[2] = 0.42
         elif name.startswith("Table"):
-            position[2] -= 0.25 / 2
+            position[2] = 0.11
         elif name.startswith("Object"):
-            position[2] -= 0.07
+            position[2] = 0.27
         elif name.startswith("Container"):
-            position[2] -= 0.09
-
-    def __str__(self) -> str:
-        ret = "TfObject: (" + \
-            f"name: \"{self.name}\", " + \
-            f"position: {self.position}, " + \
-            f"orientation: {self.orientation})"
-        return ret
+            position[2] = 0.31
 
     def get_as_PoseStamped(self) -> geometry_msgs.msg.PoseStamped:
         pose = geometry_msgs.msg.PoseStamped()
