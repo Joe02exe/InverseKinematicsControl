@@ -42,40 +42,6 @@ class TfObject():
         pose.pose.orientation.w = self.orientation[3]
         return pose
 
-
-class MoveGroup():
-    def __init__(self, group_name: str) -> None:
-        self.group_name: str = group_name
-        self.move_group = moveit_commander.MoveGroupCommander(group_name)
-        self.planning_frame: str = self.move_group.get_planning_frame()
-        self.eef_link: str = self.move_group.get_end_effector_link()
-
-    def move_to_pose(self, target_pose: geometry_msgs.msg.PoseStamped) -> bool:
-        quaternion = Rotation.from_quat([target_pose.pose.orientation.x, target_pose.pose.orientation.y,
-                                         target_pose.pose.orientation.z, target_pose.pose.orientation.w])
-        quaternion = quaternion * Rotation.from_euler('x', np.pi)
-        quaternion = quaternion * Rotation.from_euler('z', np.pi / 4)
-        orientation = quaternion.as_quat()
-        target_pose.pose.orientation.x = orientation[0]
-        target_pose.pose.orientation.y = orientation[1]
-        target_pose.pose.orientation.z = orientation[2]
-        target_pose.pose.orientation.w = orientation[3]
-        self.move_group.set_pose_target(target_pose)
-        
-        plan = self.move_group.go()
-        if plan is False:
-            return False
-        return True
-
-    def move_to_joint_values(self, joint_values) -> bool:
-        rospy.loginfo(f"MoveGroup \"{self.group_name}\" received target. Trying to move to joint_values {joint_values} ...")
-        self.move_group.set_joint_value_target(joint_values)
-        plan = self.move_group.go(wait=True)
-        if plan is False:
-            return False
-        return True
-
-
 class Inverse_Kinematric_Control_Node():
     def __init__(self):
         rospy.init_node('move_group', anonymous=True)
@@ -83,10 +49,9 @@ class Inverse_Kinematric_Control_Node():
         self.scene = moveit_commander.PlanningSceneInterface()
 
         self.group_names: List[str] = self.robot.get_group_names()
-        self.panda_arm: MoveGroup = MoveGroup("panda_arm")
-        self.panda_hand: MoveGroup = MoveGroup("panda_hand")
+        self.panda_arm = moveit_commander.MoveGroupCommander("panda_arm")
+        self.panda_hand = moveit_commander.MoveGroupCommander("panda_hand")
         self.tf_listener = tf.TransformListener()
-        self.touch_links = self.robot.get_link_names(group=self.panda_hand.group_name)
 
     def load_objects_from_tf(self):
         self.tables = self._get_object_from_tf("Table", NUM_TABLES)
@@ -126,12 +91,10 @@ class Inverse_Kinematric_Control_Node():
 
     def move_arm_to_object(self, obj: TfObject, z_offset=0.0) -> bool:
         """move the robot to the object, with a z offset. Returns if the planning was successful"""
-        rospy.loginfo(
-            f"Move \"{self.panda_arm.group_name}\" received target {obj.name} with z_offset {z_offset}. Trying ...")
 
         pose = obj.get_as_PoseStamped()
         pose.pose.position.z += z_offset
-        return self.panda_arm.move_to_pose(pose)
+        return self.move_to_pose(self.panda_arm, pose)
 
     def add_object_to_scene(self, tf_object: TfObject):
         self.scene.add_box(
@@ -143,7 +106,7 @@ class Inverse_Kinematric_Control_Node():
         
     def open_hand(self, open: bool):
         val = [0.04, 0.04] if open else [0.02, 0.02]
-        self.panda_hand.move_to_joint_values(val)
+        self.move_to_joint_values(self.panda_hand, val)
 
     def pick_and_place_objects(self):
         for i in range(NUM_OBJECTS):
@@ -164,6 +127,24 @@ class Inverse_Kinematric_Control_Node():
             
             self.open_hand(True)
             
+    def move_to_pose(self, move_group : any, target_pose: geometry_msgs.msg.PoseStamped, ) -> bool:
+        
+        quaternion = Rotation.from_quat([target_pose.pose.orientation.x, target_pose.pose.orientation.y,
+                                         target_pose.pose.orientation.z, target_pose.pose.orientation.w])
+        quaternion = quaternion * Rotation.from_euler('x', np.pi)
+        quaternion = quaternion * Rotation.from_euler('z', np.pi / 4)
+        orientation = quaternion.as_quat()
+        target_pose.pose.orientation.x = orientation[0]
+        target_pose.pose.orientation.y = orientation[1]
+        target_pose.pose.orientation.z = orientation[2]
+        target_pose.pose.orientation.w = orientation[3]
+        move_group.set_pose_target(target_pose)
+        
+        return move_group.go()
+
+    def move_to_joint_values(self, move_group : any, joint_values) -> bool:
+        move_group.set_joint_value_target(joint_values)
+        return move_group.go()
             
 if __name__ == '__main__':
     moveit = Inverse_Kinematric_Control_Node()
