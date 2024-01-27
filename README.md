@@ -1,14 +1,18 @@
 # Kinematic Control
-## Team member
-Matthias Ebner
 
-Stefan Huter
+This package is the Inverse-Kinematic-Control package of the second assignment in robotics.
 
+## Team members
 Paul Prünster
+
+Johannes Schneier
+
+Matthias Komar
 
 ## Manual
 
-Start the virtual machine and ROS
+
+First start the ROS-Shell and roscore
 ```shell
 ~/ros_home/ros-shell
 ```
@@ -16,26 +20,22 @@ Start ROS
 ```shell
 roscore
 ```
-Open a other terminal and VM to start coppeliaSim
+
+Open another terminal and the ROS-Shell and start the launchfile of the package by typing the following:
+
 ```shell
-coppeliaSim.sh ./coppelia-scene.ttt
+roslaunch launch/InverseKinematicsControl.launch
 ```
 
-Then start a VM an make sure you are in the kinematic_control directory to launch kinematic control
-```shell
-cd ~/catkin_ws/src/kinematic_control/
-```
-```shell
-roslaunch launch/kinematic_control.launch
-```
+This should be it. you should see Rviz. With a delay of about 10 seconds, coppelia will start and the program will be executed. The robot should place the objects in the containers and everything should work just fine.
 
-To run the simulation open a other VM and enter one of the following publishes
-```shell
-rostopic pub -l /Franka/goal_euler kinematic_control/EulerPose "{position: {x: 0.366, y: -0.15, z: 0.405}, orientation: {phi: 3.1415, theta: 3.1415, psi: 0.0}}"
 
-rostopic pub -l /Franka/goal_euler kinematic_control/EulerPose "{position: {x: 0.366, y: -0.15, z: 0.405}, orientation: {phi: 3.3, theta: 2.8, psi: 0.0}}"
+### Safe this for later maybe
+obstacle:
+dimensions for Object_3: [0.05000000447034836, 0.05000000447034836, 0.3499999940395355, 0.0]
 
-rostopic pub -l /Franka/goal_euler kinematic_control/EulerPose "{position: {x: 0.366, y: -0.15, z: 0.205}, orientation: {phi: 3.3, theta: 2.8, psi: 0.0}}"
+container
+dimensions for Object_3: [0.11835280805826187, 0.11835280805826187, 0.010370612144470215, 0.0]
 
-rostopic pub -l /Franka/goal_euler kinematic_control/EulerPose "{position: {x: 0.366, y: -0.15, z: 0.405}, orientation: {phi: 0.0, theta: 3.1415, psi: 4.0}}"
-```
+objects:
+dimensions for Object_1: [0.05000000074505806, 0.05000000074505806, 0.05000000074505806, 0.0]
