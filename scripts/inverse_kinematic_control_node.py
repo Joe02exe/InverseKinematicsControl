@@ -228,7 +228,7 @@ class Moveit_main_node():
 
     def detach_object_from_gripper(self, object):
         if not object.is_attached_to_gripper:
-            rospy.log_err(
+            rospy.logerr(
                 f"object {object.name} is not attached to gripper, cannot detach")
             return
         rospy.loginfo(f"detaching object {object.name} from gripper")
@@ -333,9 +333,7 @@ class Moveit_main_node():
 
     def pick_and_place_objects(self):
         for i in range(NUM_OBJECTS):
-            print("")
-            rospy.loginfo(
-                f"#### start pick and place routine for object {i + 1} ####")
+            rospy.loginfo(f"#### start pick and place routine for object {i + 1} ####")
             self.close_fingers()
             if not self.move_arm_to_object(self.object_list[i], z_offset=0.2):
                 self.abort_pick_and_place(i)
@@ -345,8 +343,6 @@ class Moveit_main_node():
             if not self.move_arm_to_object(self.object_list[i], z_offset=0.12):
                 self.abort_pick_and_place(i)
                 continue
-            self.add_object_to_scene(self.object_list[i])
-            self.attach_object_to_gripper(self.object_list[i])
             self.close_fingers()
             if not self.move_arm_to_object(self.object_list[i], z_offset=0.2):
                 self.abort_pick_and_place(i)
@@ -356,6 +352,10 @@ class Moveit_main_node():
                 continue
             self.detach_object_from_gripper(self.object_list[i])
             self.open_fingers()
+            
+            # Check if cube is in bowl else retry
+            
+            
 
 
 if __name__ == '__main__':
