@@ -12,14 +12,12 @@ NUM_OBSTACLES = 4
 NUM_TABLES = 2
 
 class TfObject():
-    def __init__(self, name: str, position: List[float], orientation: List[float], dimensions: List[float] = [1.0, 1.0, 1.0], planning_frame: str = "panda_link0"):
+    def __init__(self, name: str, position, orientation):
         self.name = name
-        self.position: List[float] = position
-        self.orientation: List[float] = orientation
-        self.planning_frame: str = planning_frame
-        self.loaded_in_scene: bool = False
-        self.is_attached_to_gripper: bool = False
-        self.dimensions: List[float] = dimensions
+        self.position = position
+        self.orientation = orientation
+        self.planning_frame = "panda_link0"
+        self.dimensions = [1.0, 1.0, 1.0]
         
         if name.startswith("Obstacle"):
             position[2] = 0.42
@@ -44,11 +42,10 @@ class TfObject():
 
 class Inverse_Kinematric_Control_Node():
     def __init__(self):
-        rospy.init_node('move_group', anonymous=True)
+        rospy.init_node('inverse_kinematics_control')
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
 
-        self.group_names: List[str] = self.robot.get_group_names()
         self.panda_arm = moveit_commander.MoveGroupCommander("panda_arm")
         self.panda_hand = moveit_commander.MoveGroupCommander("panda_hand")
         self.tf_listener = tf.TransformListener()
@@ -74,7 +71,7 @@ class Inverse_Kinematric_Control_Node():
             obstacle.dimensions = [0.05, 0.05, 0.35]
             self.add_object_to_scene(obstacle)
 
-    def _get_object_from_tf(self, obj_name: str, object_count: int, reference_frame_name: str = "/reference_frame"):
+    def _get_object_from_tf(self, obj_name: str, object_count: int):
         rate = rospy.Rate(50.0)
         
         objects = []
@@ -82,27 +79,20 @@ class Inverse_Kinematric_Control_Node():
             object_name: str = f"{obj_name}_{i + 1}"
             while True:
                 try:
-                    (pos, rot) = self.tf_listener.lookupTransform(reference_frame_name, object_name, rospy.Time(0))
+                    (pos, rot) = self.tf_listener.lookupTransform("/reference_frame", object_name, rospy.Time(0))
                     objects.append(TfObject(name=object_name, position=pos, orientation=rot))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     rate.sleep()
         return objects
 
-    def move_arm_to_object(self, obj: TfObject, z_offset=0.0) -> bool:
-        """move the robot to the object, with a z offset. Returns if the planning was successful"""
-
+    def move_arm_to_object(self, obj: TfObject, offset=True) -> bool:
         pose = obj.get_as_PoseStamped()
-        pose.pose.position.z += z_offset
+        pose.pose.position.z += 0.18 if offset else 0.12
         return self.move_to_pose(self.panda_arm, pose)
 
     def add_object_to_scene(self, tf_object: TfObject):
-        self.scene.add_box(
-            tf_object.name,
-            tf_object.get_as_PoseStamped(),
-            tf_object.dimensions)
-
-        tf_object.loaded_in_scene = True  
+        self.scene.add_box(tf_object.name, tf_object.get_as_PoseStamped(), tf_object.dimensions)
         
     def open_hand(self, open: bool):
         val = [0.04, 0.04] if open else [0.02, 0.02]
@@ -112,23 +102,25 @@ class Inverse_Kinematric_Control_Node():
         for i in range(NUM_OBJECTS):
             self.open_hand(True)
             
-            if not self.move_arm_to_object(self.objects[i], z_offset=0.2):
-                continue
-            self.scene.remove_world_object(self.objects[i].name)
-            if not self.move_arm_to_object(self.objects[i], z_offset=0.12):
+            if not self.move_arm_to_object(self.objects[i]):
                 continue
             
+            # Move down to cube and close gripper
+            self.scene.remove_world_object(self.objects[i].name)
+            if not self.move_arm_to_object(self.objects[i], offset=False):
+                continue
             self.open_hand(False)
             
-            if not self.move_arm_to_object(self.objects[i], z_offset=0.2):
+            if not self.move_arm_to_object(self.objects[i]):
+                self.open_hand(True)
                 continue
-            if not self.move_arm_to_object(self.containers[i], z_offset=0.2):
+            if not self.move_arm_to_object(self.containers[i]):
+                self.open_hand(True)
                 continue
             
             self.open_hand(True)
             
     def move_to_pose(self, move_group : any, target_pose: geometry_msgs.msg.PoseStamped, ) -> bool:
-        
         quaternion = Rotation.from_quat([target_pose.pose.orientation.x, target_pose.pose.orientation.y,
                                          target_pose.pose.orientation.z, target_pose.pose.orientation.w])
         quaternion = quaternion * Rotation.from_euler('x', np.pi)
