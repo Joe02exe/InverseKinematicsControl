@@ -13,10 +13,7 @@ NUM_OBJECTS = 3
 NUM_OBSTACLES = 4
 NUM_TABLES = 2
 
-
 class TfObject():
-    """Wrapper for the tf object from coppelia - makes it easier to use"""
-
     def __init__(self,
                  name: str,
                  position: List[float],
@@ -30,8 +27,7 @@ class TfObject():
         self.loaded_in_scene: bool = False
         self.is_attached_to_gripper: bool = False
         self.dimensions: List[float] = dimensions
-
-        # TODO: remove this hack, this is just a hack to make the objects stand on the table
+        
         if name.startswith("Obstacle"):
             position[2] += 0.08
         elif name.startswith("Table"):
@@ -62,15 +58,6 @@ class TfObject():
 
 
 class MoveGroup():
-    """ Wrapper for the moveit move group - makes it easier to use"""
-
-    def __str__(self) -> str:
-        ret = "MoveGroup: (" + \
-            f"name: \"{self.group_name}\", " + \
-            f"planning_frame: \"{self.planning_frame}\", " +\
-            f"eef_link: \"{self.eef_link}\")"
-        return ret
-
     def __init__(self, group_name: str) -> None:
         self.group_name: str = group_name
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
@@ -104,7 +91,6 @@ class MoveGroup():
 
 
 class Inverse_Kinematric_Control_Node():
-
     def __init__(self):
         rospy.init_node('move_group', anonymous=True)
         self.robot = moveit_commander.RobotCommander()
@@ -127,14 +113,12 @@ class Inverse_Kinematric_Control_Node():
             object.dimensions = [0.05, 0.05, 0.05]
             self.add_object_to_scene(object)
 
-        self.container_list = self._get_object_from_tf(
-            "Container", NUM_CONTAINERS)
+        self.container_list = self._get_object_from_tf("Container", NUM_CONTAINERS)
         for container in self.container_list:
             container.dimensions = [0.12927, 0.12927, 0.05265]
             self.add_object_to_scene(container)
 
-        self.obstacle_list = self._get_object_from_tf(
-            "Obstacle", NUM_OBSTACLES)
+        self.obstacle_list = self._get_object_from_tf("Obstacle", NUM_OBSTACLES)
         for obstacle in self.obstacle_list:
             obstacle.dimensions = [0.05, 0.05, 0.35]
             self.add_object_to_scene(obstacle)
@@ -153,25 +137,6 @@ class Inverse_Kinematric_Control_Node():
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     rate.sleep()
         return objects
-
-    def clean_scene(self):
-        if self.table_list is not None:
-            for table in self.table_list:
-                if table.loaded_in_scene:
-                    self.scene.remove_world_object(table.name)
-        if self.object_list is not None:
-            for object in self.object_list:
-                if object.loaded_in_scene:
-                    self.scene.remove_world_object(object.name)
-        if self.container_list is not None:
-            for container in self.container_list:
-                if container.loaded_in_scene:
-                    self.scene.remove_world_object(container.name)
-        if self.obstacle_list is not None:
-            for obstacle in self.obstacle_list:
-                if obstacle.loaded_in_scene:
-                    self.scene.remove_world_object(obstacle.name)
-        rospy.loginfo("cleanup finished")
 
     def move_arm_to_object(self, object: TfObject, z_offset=0.0) -> bool:
         """move the robot to the object, with a z offset. Returns if the planning was successful"""
@@ -192,7 +157,6 @@ class Inverse_Kinematric_Control_Node():
 
     def remove_object_from_scene(self, object):
         self.scene.remove_world_object(object.name)
-        object.loaded_in_scene = False
         
     def open_hand(self, open: bool):
         val = [0.04, 0.04] if open else [0.02, 0.02]
@@ -216,8 +180,6 @@ class Inverse_Kinematric_Control_Node():
                 continue
             
             self.open_hand(True)
-            
-            # TODO Check if cube is in bowl else retry
             
             
 if __name__ == '__main__':
