@@ -4,9 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import rospy
 import moveit_commander
-import moveit_msgs.msg
 import geometry_msgs.msg
-import trajectory_msgs
 
 NUM_CONTAINERS = 3
 NUM_OBJECTS = 3
@@ -14,12 +12,7 @@ NUM_OBSTACLES = 4
 NUM_TABLES = 2
 
 class TfObject():
-    def __init__(self,
-                 name: str,
-                 position: List[float],
-                 orientation: List[float],
-                 dimensions: List[float] = [1.0, 1.0, 1.0],
-                 planning_frame: str = "panda_link0"):
+    def __init__(self, name: str, position: List[float], orientation: List[float], dimensions: List[float] = [1.0, 1.0, 1.0], planning_frame: str = "panda_link0"):
         self.name = name
         self.position: List[float] = position
         self.orientation: List[float] = orientation
@@ -96,23 +89,23 @@ class Inverse_Kinematric_Control_Node():
         self.touch_links = self.robot.get_link_names(group=self.panda_hand.group_name)
 
     def load_objects_from_tf(self):
-        self.table_list = self._get_object_from_tf("Table", NUM_TABLES)
-        for table in self.table_list:
+        self.tables = self._get_object_from_tf("Table", NUM_TABLES)
+        for table in self.tables:
             table.dimensions = [1.0, 0.6, 0.25]
             self.add_object_to_scene(table)
 
-        self.object_list = self._get_object_from_tf("Object", NUM_OBJECTS)
-        for object in self.object_list:
-            object.dimensions = [0.05, 0.05, 0.05]
-            self.add_object_to_scene(object)
+        self.objects = self._get_object_from_tf("Object", NUM_OBJECTS)
+        for obj in self.objects:
+            obj.dimensions = [0.05, 0.05, 0.05]
+            self.add_object_to_scene(obj)
 
-        self.container_list = self._get_object_from_tf("Container", NUM_CONTAINERS)
-        for container in self.container_list:
+        self.containers = self._get_object_from_tf("Container", NUM_CONTAINERS)
+        for container in self.containers:
             container.dimensions = [0.12927, 0.12927, 0.05265]
             self.add_object_to_scene(container)
 
-        self.obstacle_list = self._get_object_from_tf("Obstacle", NUM_OBSTACLES)
-        for obstacle in self.obstacle_list:
+        self.obstacles = self._get_object_from_tf("Obstacle", NUM_OBSTACLES)
+        for obstacle in self.obstacles:
             obstacle.dimensions = [0.05, 0.05, 0.35]
             self.add_object_to_scene(obstacle)
 
@@ -131,12 +124,12 @@ class Inverse_Kinematric_Control_Node():
                     rate.sleep()
         return objects
 
-    def move_arm_to_object(self, object: TfObject, z_offset=0.0) -> bool:
+    def move_arm_to_object(self, obj: TfObject, z_offset=0.0) -> bool:
         """move the robot to the object, with a z offset. Returns if the planning was successful"""
         rospy.loginfo(
-            f"Move \"{self.panda_arm.group_name}\" received target {object.name} with z_offset {z_offset}. Trying ...")
+            f"Move \"{self.panda_arm.group_name}\" received target {obj.name} with z_offset {z_offset}. Trying ...")
 
-        pose = object.get_as_PoseStamped()
+        pose = obj.get_as_PoseStamped()
         pose.pose.position.z += z_offset
         return self.panda_arm.move_to_pose(pose)
 
@@ -146,10 +139,7 @@ class Inverse_Kinematric_Control_Node():
             tf_object.get_as_PoseStamped(),
             tf_object.dimensions)
 
-        tf_object.loaded_in_scene = True
-
-    def remove_object_from_scene(self, object):
-        self.scene.remove_world_object(object.name)
+        tf_object.loaded_in_scene = True  
         
     def open_hand(self, open: bool):
         val = [0.04, 0.04] if open else [0.02, 0.02]
@@ -159,17 +149,17 @@ class Inverse_Kinematric_Control_Node():
         for i in range(NUM_OBJECTS):
             self.open_hand(True)
             
-            if not self.move_arm_to_object(self.object_list[i], z_offset=0.2):
+            if not self.move_arm_to_object(self.objects[i], z_offset=0.2):
                 continue
-            self.remove_object_from_scene(self.object_list[i])
-            if not self.move_arm_to_object(self.object_list[i], z_offset=0.12):
+            self.scene.remove_world_object(self.objects[i].name)
+            if not self.move_arm_to_object(self.objects[i], z_offset=0.12):
                 continue
             
             self.open_hand(False)
             
-            if not self.move_arm_to_object(self.object_list[i], z_offset=0.2):
+            if not self.move_arm_to_object(self.objects[i], z_offset=0.2):
                 continue
-            if not self.move_arm_to_object(self.container_list[i], z_offset=0.2):
+            if not self.move_arm_to_object(self.containers[i], z_offset=0.2):
                 continue
             
             self.open_hand(True)
