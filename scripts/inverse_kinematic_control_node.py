@@ -12,13 +12,18 @@ NUM_OBSTACLES = 4
 NUM_TABLES = 2
 
 class TfObject():
+    """
+    The TfObject class represents the transformation object with a name, position, and orientation in a 3D space.
+    It includes default values for the planning frame and dimensions, with special adjustments
+    based on the object's name.
+    """
     def __init__(self, name: str, position, orientation):
         self.name = name
         self.position = position
         self.orientation = orientation
         self.planning_frame = "panda_link0"
         self.dimensions = [1.0, 1.0, 1.0]
-        
+
         if name.startswith("Obstacle"):
             position[2] = 0.42
         elif name.startswith("Table"):
@@ -40,7 +45,11 @@ class TfObject():
         pose.pose.orientation.w = self.orientation[3]
         return pose
 
+
 class Inverse_Kinematric_Control_Node():
+    """
+    This class contains all the logic: from placing the object to moving the objects
+    """
     def __init__(self):
         rospy.init_node('inverse_kinematics_control')
         self.robot = moveit_commander.RobotCommander()
@@ -51,6 +60,9 @@ class Inverse_Kinematric_Control_Node():
         self.tf_listener = tf.TransformListener()
 
     def load_objects_from_tf(self):
+        """
+        method to load the objects from coppelia into the moveit scene
+        """
         self.tables = self._get_object_from_tf("Table", NUM_TABLES)
         for table in self.tables:
             table.dimensions = [1.0, 0.6, 0.25]
@@ -72,8 +84,13 @@ class Inverse_Kinematric_Control_Node():
             self.add_object_to_scene(obstacle)
 
     def _get_object_from_tf(self, obj_name: str, object_count: int):
+        """ 
+        method to get the object from the tf message
+        :param name: the name of the object
+        :param object_count: The amount of objects in total
+        """
         rate = rospy.Rate(50.0)
-        
+
         objects = []
         for i in range(0, object_count):
             object_name: str = f"{obj_name}_{i + 1}"
@@ -87,40 +104,62 @@ class Inverse_Kinematric_Control_Node():
         return objects
 
     def move_arm_to_object(self, obj: TfObject, offset=True) -> bool:
+        """
+        method that moves the panda arm to the object
+        :param obj: the goal object to move to
+        :param offset: tells us if the moving process is combined with a grappign process
+        """
         pose = obj.get_as_PoseStamped()
         pose.pose.position.z += 0.18 if offset else 0.12
         return self.move_to_pose(self.panda_arm, pose)
 
     def add_object_to_scene(self, tf_object: TfObject):
+        """
+        method to add an object to the scene
+        :param tf_object: the object that needs to be added to the scene
+        """
         self.scene.add_box(tf_object.name, tf_object.get_as_PoseStamped(), tf_object.dimensions)
-        
+
     def open_hand(self, open: bool):
+        """
+        method to open the hand of the gripper
+        :param open: tells us if the gripper should be opened
+        """
         val = [0.04, 0.04] if open else [0.02, 0.02]
-        self.move_to_joint_values(self.panda_hand, val)
+        self.panda_hand.set_joint_value_target(val)
+        return self.panda_hand.go()
 
     def pick_and_place_objects(self):
+        """
+        method to move the cubes from table1 to table2
+        """
         for i in range(NUM_OBJECTS):
             self.open_hand(True)
-            
+
             if not self.move_arm_to_object(self.objects[i]):
                 continue
-            
+
             # Move down to cube and close gripper
             self.scene.remove_world_object(self.objects[i].name)
             if not self.move_arm_to_object(self.objects[i], offset=False):
                 continue
             self.open_hand(False)
-            
+
             if not self.move_arm_to_object(self.objects[i]):
                 self.open_hand(True)
                 continue
             if not self.move_arm_to_object(self.containers[i]):
                 self.open_hand(True)
                 continue
-            
+
             self.open_hand(True)
-            
-    def move_to_pose(self, move_group : any, target_pose: geometry_msgs.msg.PoseStamped, ) -> bool:
+
+    def move_to_pose(self, move_group: any, target_pose: geometry_msgs.msg.PoseStamped, ) -> bool:
+        """
+        method to move to a specific pose
+        :param move_group: the group that needs to be moved to the pose
+        :param target_pose: the pose to move to
+        """
         quaternion = Rotation.from_quat([target_pose.pose.orientation.x, target_pose.pose.orientation.y,
                                          target_pose.pose.orientation.z, target_pose.pose.orientation.w])
         quaternion = quaternion * Rotation.from_euler('x', np.pi)
@@ -131,13 +170,9 @@ class Inverse_Kinematric_Control_Node():
         target_pose.pose.orientation.z = orientation[2]
         target_pose.pose.orientation.w = orientation[3]
         move_group.set_pose_target(target_pose)
-        
+
         return move_group.go()
 
-    def move_to_joint_values(self, move_group : any, joint_values) -> bool:
-        move_group.set_joint_value_target(joint_values)
-        return move_group.go()
-            
 if __name__ == '__main__':
     moveit = Inverse_Kinematric_Control_Node()
 
