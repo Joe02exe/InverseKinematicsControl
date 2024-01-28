@@ -12,12 +12,11 @@ Matthias Komar
 ## Organization of the package
 The assignment contains the following files:
 - `launch/pick-and-place.launch`: is the launchfile you can start the simulation with (see [manual](#manual))
-- `inverse_kinematic_control_node`: The code that interfaces with ROS using moveit APIs
-- `run_coppelia.py`: The script that runs coppelia
-- `scene_code.py`: The code of the scene within coppelia (we provide this, because the code editor within coppelia is not good)
+- `scripts/inverse_kinematic_control_node.py`: The code that interfaces with ROS using moveit APIs
+- `scripts/run_coppelia.py`: The script that runs coppelia
 - `scene.ttt`: the coppelia scene
-- `slides.pdf`: presentation slides
-- `report.pdf`: our report
+- `reports/slides.pdf`: presentation slides
+- `reports/report.pdf`: our report
 - `CmMakeLists.txt, package.xml, setup.py`: package-relevant files
 
 
