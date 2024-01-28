@@ -5,12 +5,11 @@ This package is the Inverse-Kinematic-Control package of the second assignment i
 ## Team members
 Paul Prünster
 
-Johannes Schneier
+Johannes Schneider
 
 Matthias Komar
 
 ## Manual
-
 
 First start the ROS-Shell and roscore
 ```shell
@@ -21,7 +20,7 @@ Start ROS
 roscore
 ```
 
-Open another terminal and the ROS-Shell and start the launchfile of the package by typing the following:
+Open another terminal and the ROS-Shell again and start the launchfile of the package by typing the following:
 
 ```shell
 roslaunch launch/InverseKinematicsControl.launch
@@ -30,12 +29,9 @@ roslaunch launch/InverseKinematicsControl.launch
 This should be it. you should see Rviz. With a delay of about 10 seconds, coppelia will start and the program will be executed. The robot should place the objects in the containers and everything should work just fine.
 
 
-### Safe this for later maybe
-obstacle:
-dimensions for Object_3: [0.05000000447034836, 0.05000000447034836, 0.3499999940395355, 0.0]
+## Problems and Issues
+Franka the robot always tries his best on picking up the cubes and placing them in the bowls, but it can happen, that there is no way in picking them up/ placing them in the bowls due to obstacles. Franka then skips the cube.
+It can also happen that Franka the robot picks up cubes and is not able to hold on to them. It is rather rare, but worth mentioning.
 
-container
-dimensions for Object_3: [0.11835280805826187, 0.11835280805826187, 0.010370612144470215, 0.0]
 
-objects:
-dimensions for Object_1: [0.05000000074505806, 0.05000000074505806, 0.05000000074505806, 0.0]
+... We love Franka the robot <3
